@@ -10,6 +10,8 @@ import time
 import queue
 import os
 import gdrive_downloader
+import pyautogui
+import time
 #from datetime import datetime, timedelta
 
 # Replace with your downloaded credentials JSON file path
@@ -56,6 +58,9 @@ password_entry.pack(padx=pad_x, pady=pad_y)
 login_button = ttk.Button(root, text="Login", command=lambda: check_login(username_entry.get(), password_entry.get()))
 login_button.pack(padx=pad_x, pady=pad_y)
 
+tooltip = ttk.Label(root, text="Body")
+tooltip.pack(padx=pad_x, pady=pad_y)
+
 # Define error message label (optional)
 error_label = ttk.Label(root, text="", foreground="red")  # Initially empty, red for errors
 error_label.pack(padx=pad_x, pady=pad_y)
@@ -64,16 +69,54 @@ message_label = ttk.Label(root, text="", foreground="blue")  # Initially empty, 
 message_label.pack(padx=pad_x, pady=pad_y)
 
 
+
 update_queue = queue.Queue()
+
+
 
 tree = ttk.Treeview(root)
 gdrive_downloader.init_gdrive()
 frame1 = tk.Frame(root)
 frame1.pack(padx=pad_x,pady=pad_y)
+def open_dicom_viewer(scan_file):
+    pyautogui.hotkey("win")  # Open Run dialog
+    time.sleep(1)
+    pyautogui.write("terminator")
+    pyautogui.press("enter")  # Open Notepad
+    time.sleep(1)  # Wait for Notepad to open
+    #pyautogui.hotkey("ctrl", "o")  # Open file dialog
+    pyautogui.write("bhushan")
+    pyautogui.press("enter")  # Open the file
+    pass
 def open_scan(tree):
     print("opening scan...")
-    
+    selected_item_id = tree.focus()
+    print(selected_item_id)
+    if selected_item_id != '':
+        selected_item = tree.item(selected_item_id)
+        print(selected_item)
+        open_dicom_viewer(selected_item['values'][3])
     pass
+
+
+def show_tooltip(event):
+    str_row = tree.identify_row(event.y)
+    #rowindex = int(str_row.replace('I',' '))
+    print('row:=',str_row,'type:=',type(str_row))
+    str_column = tree.identify_column(event.x)
+    print('str_column:=',str_column)
+    for item_id in tree.get_children():
+        if str_row == item_id:
+            print("item_id:=",item_id)
+            item_data = tree.item(item_id)["values"]
+            text =item_data[2]# tree.item(item, "values")[2]  # Retrieve text from relevant column
+            tooltip.config(text=text)
+            #tooltip.place(x=event.x + 10, y=event.y + 10)
+
+tree.bind("<Enter>", show_tooltip)
+tree.bind("<Leave>", lambda _: tooltip.pack_forget())
+
+
 open_button = ttk.Button(frame1,text="open",command=lambda: open_scan(tree))
 open_button.pack(side='left',fill="x")
 
@@ -116,6 +159,18 @@ def extract_drive_links(email_content):
             if drive_link_match:
                 drive_links.append(drive_link_match.group(0))   
     return drive_links
+def get_body(email_message):
+    print('Getting Body...')
+    for part in email_message.walk():
+        if part.get_content_type() == 'text/plain':  # Text content
+            text = part.get_payload(decode=True).decode('utf-8')
+            lines = text.splitlines()
+            output=''
+            for line in lines:
+                output += '['+line+']'
+            return output
+    return "No Body"
+    pass
 def get_zip_filename(email_message):
     print("Getting ZIP File Name")
     for part in email_message.walk():
@@ -133,7 +188,13 @@ def clear_treeview(tree):
     if len(tree.get_children())>0:
         tree.delete(*tree.get_children())
 
-
+class MultilineCell(tk.Frame):
+    def __init__(self, master, text):
+        super().__init__(master)
+        self.text = tk.Text(self, wrap="word")
+        self.text.insert("1.0", text)
+        self.text.pack()
+        
 def populate_email(server,tree):
     server.select("INBOX")
     # Get today's date in UTC
@@ -166,11 +227,13 @@ def populate_email(server,tree):
             print("Attachments:-",attachments)
             print("Drive Links:-",drivelinks)
             zipfilename = get_zip_filename(email_message)
+            body = get_body(email_message)
+            #bodycell = MultilineCell(tree,body)
             #download_image = tk.PhotoImage(file="download_icon.png")
             drive_file_id = ''
             if len(drivelinks) > 0: 
                 drive_file_id = re.search(r"/file/d/(.*?)/", drivelinks[0]).group(1)
-            tree.insert("", tk.END, values=(sender, subject,zipfilename,"Calculating...",drive_file_id))
+            tree.insert("", tk.END, values=(sender, subject,body,zipfilename,"Calculating...",drive_file_id))
             
 def check_file_exists(filename,drive_file_id):
     downloads_path = os.path.expanduser("downloads")
@@ -189,8 +252,8 @@ def check_download(tree):
     for item_id in tree.get_children():
         item_data = tree.item(item_id)["values"]
         print(item_data)
-        print('Downloaded File Name:-',item_data[2])
-        result = check_file_exists(item_data[2],item_data[4])
+        print('Downloaded File Name:-',item_data[3])
+        result = check_file_exists(item_data[3],item_data[5])
         if result == False:
             print('Start Downloading file')
         
@@ -200,17 +263,23 @@ def background_task(queue,server, tree):
     #    queue.put((i, f"Item {i}"))  # Add items to the queue
     print('starting email scanning ...')
     while True:
+        try:
+            message_label.config(text="Scanning emails...")
         
-        message_label.config(text="Scanning emails...")
-        populate_email(server, tree)
-        
-        root.after(0,check_download(tree))
-        
-        current_time = datetime.datetime.now()
-        five_min_delta = datetime.timedelta(minutes=5)
-        next_scan_time = current_time+five_min_delta
-        print('next scan will start at ',next_scan_time)
-        time.sleep(600)
+            populate_email(server, tree)
+            
+            root.after(0,check_download(tree))
+
+            current_time = datetime.datetime.now()
+            five_min_delta = datetime.timedelta(minutes=5)
+            next_scan_time = current_time+five_min_delta
+            print('next scan will start at ',next_scan_time)
+            time.sleep(600)
+        except Exception as e:
+            print('Starting the background task again..')
+            threading.Thread(target=background_task, args=(queue,server,tree,)).start()
+            print('exiitng the current thread...')
+            break
 
 def update_treeview(tree):
     #print("updating tree view...")
@@ -232,18 +301,20 @@ def check_login(username, password):
         error_label.config(text="Login Successful")
         
         tree.pack(fill=tk.BOTH, expand=True)
-        tree["columns"] = ("column1", "column2","column3","column4",'column5')
+        tree["columns"] = ("column1", "column2","column3","column4",'column5',"column6")
         tree.heading("column1", text="Sender")
         tree.heading("column2", text="Subject")
-        tree.heading("column3",text="Attachments")
-        tree.heading("column4",text="Status")
-        tree.heading("column5",text="Drive ID")
+        tree.heading("column3",text="Body")
+        tree.heading("column4",text="Attachments")
+        tree.heading("column5",text="Status")
+        tree.heading("column6",text="Drive ID")
         tree.column('#0',width=1,stretch=True)
         tree.column('column1',minwidth=1,stretch=True)
         tree.column('column2',minwidth=100,stretch=True)
-        tree.column('column3',minwidth=100,stretch=True)
+        tree.column('column3',minwidth=100,stretch=True,anchor='center')
         tree.column('column4',minwidth=100,stretch=True)
         tree.column('column5',minwidth=100,stretch=True)
+        tree.column('column6',minwidth=100,stretch=True)
         # Insert items with multiple columns
         #tree.insert("", tk.END, values=("Item 1", "Value A"))
         #tree.insert("", tk.END, values=("Item 2", "Value B"))

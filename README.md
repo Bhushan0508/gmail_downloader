@@ -6,3 +6,4 @@ This app handles the workflow of Radiologist
 4. punctuates the report using llm AI
 5. Sets the report file in gmail and sends reply to the mail.
 Current status
+1. Displays the scan in the tkinter UI.
