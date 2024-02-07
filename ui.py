@@ -276,6 +276,7 @@ def background_task(queue,server, tree):
             print('next scan will start at ',next_scan_time)
             time.sleep(600)
         except Exception as e:
+            print("Error:=",e)
             print('Starting the background task again..')
             threading.Thread(target=background_task, args=(queue,server,tree,)).start()
             print('exiitng the current thread...')
