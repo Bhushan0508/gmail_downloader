@@ -85,7 +85,7 @@ def open_dicom_viewer(scan_file):
     pyautogui.press("enter")  # Open Notepad
     time.sleep(1)  # Wait for Notepad to open
     #pyautogui.hotkey("ctrl", "o")  # Open file dialog
-    pyautogui.write("bhushan")
+    pyautogui.write(scan_file)
     pyautogui.press("enter")  # Open the file
     pass
 def open_scan(tree):
@@ -290,7 +290,26 @@ def update_treeview(tree):
         item_id, item_text = update_queue.get()
         tree.insert("", tk.END, values=(item_id, item_text))
     root.after(100, update_treeview,tree)  # Check for updates again after 100ms
-
+def update_ui_on_login(server,username,password):
+    error_label.config(text="Login Successful")
+    
+    tree.pack(fill=tk.BOTH, expand=True)
+    tree["columns"] = ("column1", "column2","column3","column4",'column5',"column6")
+    tree.heading("column1", text="Sender")
+    tree.heading("column2", text="Subject")
+    tree.heading("column3",text="Body")
+    tree.heading("column4",text="Attachments")
+    tree.heading("column5",text="Status")
+    tree.heading("column6",text="Drive ID")
+    tree.column('#0',width=1,stretch=True)
+    tree.column('column1',minwidth=1,stretch=True)
+    tree.column('column2',minwidth=100,stretch=True)
+    tree.column('column3',minwidth=100,stretch=True,anchor='center')
+    tree.column('column4',minwidth=100,stretch=True)
+    tree.column('column5',minwidth=100,stretch=True)
+    tree.column('column6',minwidth=100,stretch=True)
+    threading.Thread(target=background_task, args=(update_queue,server,tree,username,password)).start()
+    
 def check_login(username, password):
     # Replace with your actual authentication logic
     server = imaplib.IMAP4_SSL("imap.gmail.com")
@@ -301,28 +320,12 @@ def check_login(username, password):
         #logout_button.pack(padx=pad_x, pady=pad_y)
         #login_button.config(state=tk.DISABLED)
         #root.destroy()  # Close the window on successful login
-        error_label.config(text="Login Successful")
         
-        tree.pack(fill=tk.BOTH, expand=True)
-        tree["columns"] = ("column1", "column2","column3","column4",'column5',"column6")
-        tree.heading("column1", text="Sender")
-        tree.heading("column2", text="Subject")
-        tree.heading("column3",text="Body")
-        tree.heading("column4",text="Attachments")
-        tree.heading("column5",text="Status")
-        tree.heading("column6",text="Drive ID")
-        tree.column('#0',width=1,stretch=True)
-        tree.column('column1',minwidth=1,stretch=True)
-        tree.column('column2',minwidth=100,stretch=True)
-        tree.column('column3',minwidth=100,stretch=True,anchor='center')
-        tree.column('column4',minwidth=100,stretch=True)
-        tree.column('column5',minwidth=100,stretch=True)
-        tree.column('column6',minwidth=100,stretch=True)
         # Insert items with multiple columns
         #tree.insert("", tk.END, values=("Item 1", "Value A"))
         #tree.insert("", tk.END, values=("Item 2", "Value B"))
         #populate_email(server,tree)
-        threading.Thread(target=background_task, args=(update_queue,server,tree,username,password)).start()
+        root.after(0,lambda: update_ui_on_login(server,username,password))
         
         
 
