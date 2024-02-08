@@ -257,7 +257,7 @@ def check_download(tree):
         if result == False:
             print('Start Downloading file')
         
-def background_task(queue,server, tree):
+def background_task(queue,server, tree,username,password):
     #for i in range(5):
     #    time.sleep(1)  # Simulate some work
     #    queue.put((i, f"Item {i}"))  # Add items to the queue
@@ -274,11 +274,13 @@ def background_task(queue,server, tree):
             five_min_delta = datetime.timedelta(minutes=5)
             next_scan_time = current_time+five_min_delta
             print('next scan will start at ',next_scan_time)
-            time.sleep(600)
+            print('Sleeping for seconds:=',five_min_delta.total_seconds())
+            time.sleep(five_min_delta.total_seconds())
+            print('wakingup the background task....')
         except Exception as e:
             print("Error:=",e)
             print('Starting the background task again..')
-            threading.Thread(target=background_task, args=(queue,server,tree,)).start()
+            threading.Thread(target=check_login, args=(username,password)).start()
             print('exiitng the current thread...')
             break
 
@@ -320,7 +322,7 @@ def check_login(username, password):
         #tree.insert("", tk.END, values=("Item 1", "Value A"))
         #tree.insert("", tk.END, values=("Item 2", "Value B"))
         #populate_email(server,tree)
-        threading.Thread(target=background_task, args=(update_queue,server,tree,)).start()
+        threading.Thread(target=background_task, args=(update_queue,server,tree,username,password)).start()
         
         
 
