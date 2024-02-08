@@ -12,6 +12,9 @@ import os
 import gdrive_downloader
 import pyautogui
 import time
+import tkinter.ttk as ttk
+from tktooltip import ToolTip
+#from reportlab.pdfgen import canvas
 #from datetime import datetime, timedelta
 
 # Replace with your downloaded credentials JSON file path
@@ -38,35 +41,45 @@ logo_image = tk.PhotoImage(file="logo2.png")  # Replace with your logo image pat
 logo_label = tk.Label(root, image=logo_image)
 logo_label.pack(pady=pad_y)  # Add padding above and below
 
+input_frame = tk.Frame(root)
+input_frame.pack(side="top",fill='y')
+
+input_frame_uname = tk.Frame(input_frame)
+input_frame_uname.pack(side='top',fill='y')
 # Create username label and entry field
-username_label = ttk.Label(root, text="Username:")
-username_label.pack(padx=pad_x, pady=pad_y)
+username_label = ttk.Label(input_frame_uname, text="Username:    ")
+username_label.pack(side='left',fill='y')
 
-username_entry = ttk.Entry(root)
+username_entry = ttk.Entry(input_frame_uname)
 username_entry.insert(0,'gawaisanjit@gmail.com')
-username_entry.pack(padx=pad_x, pady=pad_y)
+username_entry.pack(side='right',fill='y')
 
+input_frame_pass = tk.Frame(input_frame)
+input_frame_pass.pack(side='top',fill='y')
 # Create password label and entry field
-password_label = ttk.Label(root, text="Password:")
-password_label.pack(padx=pad_x, pady=pad_y)
+password_label = ttk.Label(input_frame_pass, text="Password:     ")
+password_label.pack(side='left',fill='y')
 
-password_entry = ttk.Entry(root, show="*")  # Hide password characters
+password_entry = ttk.Entry(input_frame_pass, show="*")  # Hide password characters
 password_entry.insert(0,'feun xsng mwjh dzxc')
-password_entry.pack(padx=pad_x, pady=pad_y)
+password_entry.pack(side = 'right', fill='y')
 
 # Create login button
-login_button = ttk.Button(root, text="Login", command=lambda: check_login(username_entry.get(), password_entry.get()))
-login_button.pack(padx=pad_x, pady=pad_y)
+login_button = ttk.Button(input_frame, text="Login", command=lambda: check_login(username_entry.get(), password_entry.get()))
+login_button.pack(side='top', fill='y')
 
-tooltip = ttk.Label(root, text="Body")
-tooltip.pack(padx=pad_x, pady=pad_y)
+
+
+
+tooltip = ttk.Label(input_frame, text="Body")
+tooltip.pack(side='top', fill='y',expand=True)
 
 # Define error message label (optional)
-error_label = ttk.Label(root, text="", foreground="red")  # Initially empty, red for errors
-error_label.pack(padx=pad_x, pady=pad_y)
+error_label = ttk.Label(input_frame, text="", foreground="red")  # Initially empty, red for errors
+error_label.pack(side='top', fill='y')
 
-message_label = ttk.Label(root, text="", foreground="blue")  # Initially empty, blue for errors
-message_label.pack(padx=pad_x, pady=pad_y)
+message_label = ttk.Label(input_frame, text="", foreground="blue")  # Initially empty, blue for errors
+message_label.pack(side='top', fill='y')
 
 
 
@@ -75,6 +88,24 @@ update_queue = queue.Queue()
 
 
 tree = ttk.Treeview(root)
+
+def on_selection_change(event):
+    selected_item = tree.item(tree.focus())["values"]  # Get selected item text
+    # Perform actions based on selected item
+    print("Selected item:", selected_item)
+    #text = selected_item[2].replace('][]',']\n[')
+    lines = selected_item[2].split('|')
+    body = ''
+    print("No of lines:=",len(lines))
+    for line in lines:
+        if ".zip" not in  line and "https://drive.google" not in line:
+            body+=line
+            body += '|'
+            
+    message_label.config(text=body)
+
+tree.bind("<<TreeviewSelect>>", on_selection_change)
+
 gdrive_downloader.init_gdrive()
 frame1 = tk.Frame(root)
 frame1.pack(padx=pad_x,pady=pad_y)
@@ -110,19 +141,22 @@ def show_tooltip(event):
             print("item_id:=",item_id)
             item_data = tree.item(item_id)["values"]
             text =item_data[2]# tree.item(item, "values")[2]  # Retrieve text from relevant column
-            tooltip.config(text=text)
+            #message_label.config(text=text)
+            #root.update()
+            
+            
             #tooltip.place(x=event.x + 10, y=event.y + 10)
+#ToolTip(tree, msg="MyTool tip")
+#tree.bind("<Enter>", show_tooltip)
+#tree.bind("<Leave>", lambda _: message_label.pack_forget())
 
-tree.bind("<Enter>", show_tooltip)
-tree.bind("<Leave>", lambda _: tooltip.pack_forget())
 
-
-open_button = ttk.Button(frame1,text="open",command=lambda: open_scan(tree))
-open_button.pack(side='left',fill="x")
+open_button = ttk.Button(input_frame,text="open",command=lambda: open_scan(tree))
+open_button.pack(side='top',fill="y")
 
 def check_logout(login_button,logout_button):
     login_button.config(state=tk.NORMAL)
-    logout_button.config(state=tk.DISABLED)
+    #logout_button.config(state=tk.DISABLED)
     pass
 def check_login_credentials(server,username,app_password):
     try:
@@ -148,7 +182,7 @@ def get_attachments(email_message):
     #print(attachments)
     return attachments
 
-def extract_drive_links(email_content):
+def extract_drive_links(email_content): 
     print('Extracting drive links')
     drive_links = []
     for part in email_content.walk():
@@ -167,7 +201,7 @@ def get_body(email_message):
             lines = text.splitlines()
             output=''
             for line in lines:
-                output += '['+line+']'
+                output += line+'|'
             return output
     return "No Body"
     pass

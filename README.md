@@ -7,3 +7,7 @@ This app handles the workflow of Radiologist
 5. Sets the report file in gmail and sends reply to the mail.
 Current status
 1. Displays the scan in the tkinter UI.
+2. open augnito uri 
+3. open an application and dock the application to the left.
+4. Show the mail Body
+5. Pack the 
