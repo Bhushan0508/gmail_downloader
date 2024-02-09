@@ -110,12 +110,15 @@ gdrive_downloader.init_gdrive()
 frame1 = tk.Frame(root)
 frame1.pack(padx=pad_x,pady=pad_y)
 def open_dicom_viewer(scan_file):
+    print("Opening scan file...",scan_file)
     pyautogui.hotkey("win")  # Open Run dialog
     time.sleep(1)
-    pyautogui.write("terminator")
+    pyautogui.write("Radiant DICOM Viewer")
     pyautogui.press("enter")  # Open Notepad
     time.sleep(1)  # Wait for Notepad to open
-    #pyautogui.hotkey("ctrl", "o")  # Open file dialog
+    pyautogui.hotkey("ctrl","o")  # Open file dialog
+    #pyautogui.write("c:\\users\\admin\\gmail_downloader\\downloads\\")
+    pyautogui.write(scan_file[0])
     pyautogui.write(scan_file)
     pyautogui.press("enter")  # Open the file
     pass
