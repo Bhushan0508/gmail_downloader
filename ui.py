@@ -13,7 +13,7 @@ import gdrive_downloader
 import pyautogui
 import time
 import tkinter.ttk as ttk
-from tktooltip import ToolTip
+import webbrowser
 #from reportlab.pdfgen import canvas
 #from datetime import datetime, timedelta
 
@@ -41,8 +41,24 @@ logo_image = tk.PhotoImage(file="logo2.png")  # Replace with your logo image pat
 logo_label = tk.Label(root, image=logo_image)
 logo_label.pack(pady=pad_y)  # Add padding above and below
 
-input_frame = tk.Frame(root)
-input_frame.pack(side="top",fill='y')
+upper_frame =  tk.Frame(root)
+upper_frame.pack(side='top',fill='y')
+
+input_frame = tk.Frame(upper_frame)
+input_frame.pack(side="left",fill='x')
+
+display_frame = tk.Frame(upper_frame)
+display_frame.pack(side='right',fill='x')
+
+attachment_tree = ttk.Treeview(display_frame)
+attachment_tree.pack(side='top',fill='y',expand=True)
+attachment_tree["columns"] = ("column1","column2")
+attachment_tree.heading("column1", text="History")
+attachment_tree.heading("column2", text="Attachments")
+attachment_tree.column('#0',width=1,stretch=True)
+attachment_tree.column('column1',width=300,stretch=True)
+attachment_tree.column('column2',width=200,stretch=True)
+#attachment_tree.insert("",'end',values=("1",'Test'))
 
 input_frame_uname = tk.Frame(input_frame)
 input_frame_uname.pack(side='top',fill='y')
@@ -89,11 +105,37 @@ update_queue = queue.Queue()
 
 tree = ttk.Treeview(root)
 
+def open_attachment(item_id):
+    print("Opening the attachment: ",item_id)
+    item_values = attachment_tree.item(item_id)['values']
+    splitvals = item_values[0].split("=")
+    if len(splitvals)> 1:
+        filename = "downloads/"+splitvals[1]
+        print("File=",filename)
+        webbrowser.open(filename, new=0, autoraise=True) 
+    pass
+def popup(event):
+    item_id = attachment_tree.identify("item", event.x, event.y)
+    # Access data here based on item_id
+    item_values = attachment_tree.item(item_id)['values']
+    print("Popup item_values:=",item_values)
+    if item_values[0].startswith('File:='):
+        menu = tk.Menu(attachment_tree, tearoff=0)
+        menu.add_command(label="Open", command=lambda: open_attachment(item_id))
+        menu.add_command(label="View", command=lambda: open_attachment(item_id))
+        menu.post(event.x_root, event.y_root)
+        
+attachment_tree.bind("<Button-3>", popup) 
+
+
 def on_selection_change(event):
     selected_item = tree.item(tree.focus())["values"]  # Get selected item text
     # Perform actions based on selected item
     print("Selected item:", selected_item)
     #text = selected_item[2].replace('][]',']\n[')
+    children_ids = attachment_tree.get_children()
+    for child_id in children_ids:
+        attachment_tree.delete(child_id)
     lines = selected_item[2].split('|')
     body = ''
     print("No of lines:=",len(lines))
@@ -101,9 +143,18 @@ def on_selection_change(event):
         if ".zip" not in  line and "https://drive.google" not in line:
             body+=line
             body += '|'
+    #multiline_text = body.replace('|','\n')
             
-    message_label.config(text=body)
-
+            #attachment_tree.delete(0, tk.END)
+            attachment_tree.insert("",'end',values=(line,''))
+    #message_label.config(text=body)
+    #Read the attachment file names and display in the 
+    attachments = selected_item[6].split('|')
+    if len(attachments) > 0:
+        for filename in attachments:
+            print("Mail attachment file:=",filename)
+            if len(filename.strip()) >0:
+                attachment_tree.insert("",'end',values=("File:="+filename,''))
 tree.bind("<<TreeviewSelect>>", on_selection_change)
 
 gdrive_downloader.init_gdrive()
@@ -171,8 +222,18 @@ def check_login_credentials(server,username,app_password):
         return -1
         pass
     pass
+def download_attachment_file(filename,part):
+    if filename:
+        attachment_data = part.get_payload(decode=True)
+
+        # Save attachment
+        with open("downloads/"+filename, "wb") as f:
+            f.write(attachment_data)
+        print(f"Attachment '{filename}' downloaded successfully!")
+
+    
 def get_attachments(email_message):
-    attachments=[]
+    attachments=''
     for part in email_message.walk():
         #print(part)
         if part.get_content_maintype() == 'multipart':
@@ -180,8 +241,10 @@ def get_attachments(email_message):
         if part.get('Content-Disposition') is None:
             continue
         filename = part.get_filename()
+        download_attachment_file(filename,part)
         if filename:
-            attachments.append(filename)
+            attachments+=filename
+            attachments+='|'
     #print(attachments)
     return attachments
 
@@ -270,18 +333,29 @@ def populate_email(server,tree):
             drive_file_id = ''
             if len(drivelinks) > 0: 
                 drive_file_id = re.search(r"/file/d/(.*?)/", drivelinks[0]).group(1)
-            tree.insert("", tk.END, values=(sender, subject,body,zipfilename,"Calculating...",drive_file_id))
-            
-def check_file_exists(filename,drive_file_id):
+            tree.insert("", tk.END, values=(sender, subject,body,zipfilename,"Calculating...",drive_file_id,attachments))
+def update_row(item_id, new_values):
+    tree.item(item_id, values=new_values)
+                
+def check_file_exists(filename,drive_file_id,item_id,item_values):
     downloads_path = os.path.expanduser("downloads")
     file_path = os.path.join(downloads_path, filename)
     if os.path.exists(file_path):
         print("The file({}) exists in the Downloads folder.",filename)
+        #set the status to downloaded
+        item_values[4] = "Downloaded."
+        update_row(item_id,item_values)
         return True
     else:
         print("The file does not exist in the Downloads folder.")
         print('Downloading the file...',filename)
+        #set the status to downloading
+        item_values[4] = "Downloading started."
+        update_row(item_id,item_values)
         gdrive_downloader.download(drive_file_id,filename)
+        #set status to downloaded Dome
+        item_values[4] = "Downloading completed."
+        update_row(item_id,item_values)
         return False
     pass
 def check_download(tree):
@@ -290,7 +364,7 @@ def check_download(tree):
         item_data = tree.item(item_id)["values"]
         print(item_data)
         print('Downloaded File Name:-',item_data[3])
-        result = check_file_exists(item_data[3],item_data[5])
+        result = check_file_exists(item_data[3],item_data[5],item_id,item_data)
         if result == False:
             print('Start Downloading file')
         
@@ -331,13 +405,14 @@ def update_ui_on_login(server,username,password):
     error_label.config(text="Login Successful")
     
     tree.pack(fill=tk.BOTH, expand=True)
-    tree["columns"] = ("column1", "column2","column3","column4",'column5',"column6")
+    tree["columns"] = ("column1", "column2","column3","column4",'column5',"column6","column7")
     tree.heading("column1", text="Sender")
     tree.heading("column2", text="Subject")
     tree.heading("column3",text="Body")
     tree.heading("column4",text="Attachments")
     tree.heading("column5",text="Status")
     tree.heading("column6",text="Drive ID")
+    tree.heading("column7",text="History")
     tree.column('#0',width=1,stretch=True)
     tree.column('column1',minwidth=1,stretch=True)
     tree.column('column2',minwidth=100,stretch=True)
@@ -345,6 +420,7 @@ def update_ui_on_login(server,username,password):
     tree.column('column4',minwidth=100,stretch=True)
     tree.column('column5',minwidth=100,stretch=True)
     tree.column('column6',minwidth=100,stretch=True)
+    tree.column('column7',width=10)
     threading.Thread(target=background_task, args=(update_queue,server,tree,username,password)).start()
     
 def check_login(username, password):
