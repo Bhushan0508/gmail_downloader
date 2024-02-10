@@ -27,7 +27,7 @@ CREDENTIALS_FILE = 'credentials.json'
 # Define scopes for Gmail API
 SCOPES = ['https://www.googleapis.com/auth/gmail.readonly']
 
-scan_senders=["dhanvantarict@gmail.com","hr.ctscan@gmail.com"]
+scan_senders=["dhanvantarict@gmail.com","hr.ctscan@gmail.com","info@matrix-healthcare.in"]
 
 # Define window size and padding
 window_width = 300
