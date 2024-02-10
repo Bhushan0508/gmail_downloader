@@ -174,12 +174,16 @@ def win_open_dicom_viewer(scan_file):
     pyautogui.press("enter")  # Open Notepad
     time.sleep(1)  # Wait for Notepad to open
     pyautogui.hotkey("alt","n")
+    time.sleep(1)  # Wait for Notepad to open
+    pyautogui.hotkey("enter")
+    time.sleep(1)  # Wait for Notepad to open
     pyautogui.hotkey("ctrl","o")  # Open file dialog
     #pyautogui.write("c:\\users\\admin\\gmail_downloader\\downloads\\")
     pyautogui.write(scan_file[0])
     pyautogui.write(scan_file)
     pyautogui.press("enter")  # Open the file
     print("Setting up augnito ui")
+    time.sleep(1)  # Wait for Notepad to open
     webbrowser.open("web.augnito.ai", new=0, autoraise=True) 
     pass
 def mac_import_in_horos_database(scan_file):
