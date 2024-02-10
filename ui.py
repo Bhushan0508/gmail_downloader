@@ -15,6 +15,7 @@ import time
 import tkinter.ttk as ttk
 import webbrowser
 import platform
+import subprocess
 #from reportlab.pdfgen import canvas
 #from datetime import datetime, timedelta
 
@@ -179,7 +180,8 @@ def win_open_dicom_viewer(scan_file):
 def mac_import_in_horos_database(scan_file):
     print("Opening scan file(MacOS)...",scan_file)
     print(f'Importing the zip file{scan_file} to the horos database')
-    
+    subprocess.run(["osascript", "-e", "tell application \"Horos\" \n open \"/tmp/extracted_files\"\n end tell"])
+    webbrowser.open("web.augnito.ai", new=0, autoraise=True) 
     
 def open_scan(tree):
     print("opening scan...")
