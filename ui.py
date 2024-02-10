@@ -14,6 +14,7 @@ import pyautogui
 import time
 import tkinter.ttk as ttk
 import webbrowser
+import platform
 #from reportlab.pdfgen import canvas
 #from datetime import datetime, timedelta
 
@@ -160,8 +161,8 @@ tree.bind("<<TreeviewSelect>>", on_selection_change)
 gdrive_downloader.init_gdrive()
 frame1 = tk.Frame(root)
 frame1.pack(padx=pad_x,pady=pad_y)
-def open_dicom_viewer(scan_file):
-    print("Opening scan file...",scan_file)
+def win_open_dicom_viewer(scan_file):
+    print("Opening scan file(windows)...",scan_file)
     pyautogui.hotkey("win")  # Open Run dialog
     time.sleep(1)
     pyautogui.write("Radiant DICOM Viewer")
@@ -172,7 +173,14 @@ def open_dicom_viewer(scan_file):
     pyautogui.write(scan_file[0])
     pyautogui.write(scan_file)
     pyautogui.press("enter")  # Open the file
+    print("Setting up augnito ui")
+    webbrowser.open("web.augnito.ai", new=0, autoraise=True) 
     pass
+def mac_import_in_horos_database(scan_file):
+    print("Opening scan file(MacOS)...",scan_file)
+    print(f'Importing the zip file{scan_file} to the horos database')
+    
+    
 def open_scan(tree):
     print("opening scan...")
     selected_item_id = tree.focus()
@@ -180,7 +188,17 @@ def open_scan(tree):
     if selected_item_id != '':
         selected_item = tree.item(selected_item_id)
         print(selected_item)
-        open_dicom_viewer(selected_item['values'][3])
+        
+        if platform.system() == "Windows":
+            print("Windows detected")
+            win_open_dicom_viewer(selected_item['values'][3])
+        elif platform.system() == "Darwin":
+            print("Mac OS X detected")
+            
+        else:
+            print(f"Other OS: {platform.system()}")
+        
+        
     pass
 
 
