@@ -17,6 +17,7 @@ import webbrowser
 import platform
 import subprocess
 import os
+import pathlib
 #from reportlab.pdfgen import canvas
 #from datetime import datetime, timedelta
 
@@ -115,6 +116,7 @@ def open_attachment(item_id):
     if len(splitvals)> 1:
         filename = "downloads/"+splitvals[1]
         filename = os.path.abspath(filename)
+        filename = pathlib.Path(filename).as_uri()
         print("File=",filename)
         webbrowser.open(filename, new=0, autoraise=True) 
     pass
