@@ -172,9 +172,9 @@ def win_open_dicom_viewer(scan_file):
     time.sleep(1)
     pyautogui.write("Radiant DICOM Viewer")
     pyautogui.press("enter")  # Open Notepad
-    time.sleep(1)  # Wait for Notepad to open
-    pyautogui.hotkey("enter")
     time.sleep(3)  # Wait for Notepad to open
+    pyautogui.hotkey("enter")
+    time.sleep(4)  # Wait for Notepad to open
     pyautogui.hotkey("enter")
     time.sleep(1)  # Wait for Notepad to open
     pyautogui.hotkey("ctrl","o")  # Open file dialog
