@@ -173,14 +173,15 @@ def win_open_dicom_viewer(scan_file):
     pyautogui.write("Radiant DICOM Viewer")
     pyautogui.press("enter")  # Open Notepad
     time.sleep(1)  # Wait for Notepad to open
-    pyautogui.hotkey("alt","n")
-    time.sleep(1)  # Wait for Notepad to open
+    pyautogui.hotkey("enter","n")
+    time.sleep(3)  # Wait for Notepad to open
     pyautogui.hotkey("enter")
     time.sleep(1)  # Wait for Notepad to open
     pyautogui.hotkey("ctrl","o")  # Open file dialog
     #pyautogui.write("c:\\users\\admin\\gmail_downloader\\downloads\\")
     pyautogui.write(scan_file[0])
     pyautogui.write(scan_file)
+    time.sleep(1)  # Wait for Notepad to open
     pyautogui.press("enter")  # Open the file
     print("Setting up augnito ui")
     time.sleep(1)  # Wait for Notepad to open
