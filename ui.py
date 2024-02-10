@@ -16,6 +16,7 @@ import tkinter.ttk as ttk
 import webbrowser
 import platform
 import subprocess
+import os
 #from reportlab.pdfgen import canvas
 #from datetime import datetime, timedelta
 
@@ -113,6 +114,7 @@ def open_attachment(item_id):
     splitvals = item_values[0].split("=")
     if len(splitvals)> 1:
         filename = "downloads/"+splitvals[1]
+        filename = os.path.abspath(filename)
         print("File=",filename)
         webbrowser.open(filename, new=0, autoraise=True) 
     pass
@@ -180,7 +182,7 @@ def win_open_dicom_viewer(scan_file):
 def mac_import_in_horos_database(scan_file):
     print("Opening scan file(MacOS)...",scan_file)
     print(f'Importing the zip file{scan_file} to the horos database')
-    subprocess.run(["osascript", "-e", "tell application \"Horos\" \n open \"/tmp/extracted_files\"\n end tell"])
+    subprocess.run(["osascript", "-e", f"tell application \"Horos\" \n open \"/downloads/{scan_file}\"\n end tell"])
     webbrowser.open("web.augnito.ai", new=0, autoraise=True) 
     
 def open_scan(tree):
@@ -196,7 +198,7 @@ def open_scan(tree):
             win_open_dicom_viewer(selected_item['values'][3])
         elif platform.system() == "Darwin":
             print("Mac OS X detected")
-            
+            mac_import_in_horos_database(selected_item['values'][3])
         else:
             print(f"Other OS: {platform.system()}")
         
