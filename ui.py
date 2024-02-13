@@ -18,6 +18,9 @@ import platform
 import subprocess
 import os
 import pathlib
+import response_mail
+from response_mail import recipient_email
+from tkinter import filedialog
 #from reportlab.pdfgen import canvas
 #from datetime import datetime, timedelta
 
@@ -28,6 +31,8 @@ CREDENTIALS_FILE = 'credentials.json'
 SCOPES = ['https://www.googleapis.com/auth/gmail.readonly']
 
 scan_senders=["dhanvantarict@gmail.com","hr.ctscan@gmail.com","info@matrix-healthcare.in"]
+
+emails_dict={}
 
 # Define window size and padding
 window_width = 300
@@ -190,7 +195,11 @@ def win_open_dicom_viewer(scan_file):
 def mac_import_in_horos_database(scan_file):
     print("Opening scan file(MacOS)...",scan_file)
     print(f'Importing the zip file{scan_file} to the horos database')
-    subprocess.run(["osascript", "-e", f"tell application \"Horos\" \n open \"/downloads/{scan_file}\"\n end tell"])
+    try:
+        subprocess.run(["osascript", "-e", f"tell application \"Horos\"t \n open \"/downloads/{scan_file}\"\n end tell"])
+    except Exception as e:
+        print('error executing apple script ',e)
+        pass
     webbrowser.open("web.augnito.ai", new=0, autoraise=True) 
     
 def open_scan(tree):
@@ -237,6 +246,36 @@ def show_tooltip(event):
 
 open_button = ttk.Button(input_frame,text="open",command=lambda: open_scan(tree))
 open_button.pack(side='top',fill="y")
+
+def reply_mail(tree):
+    print('Replying to mail....')
+    selected_item_id = tree.focus()
+    if selected_item_id != '':
+        selected_item = tree.item(selected_item_id)
+        print(selected_item)
+        #get the subject for the mail.
+        sender_email = 'gawaisanjit@gmail.com'
+        recipient_mail='bhushan0508@gmail.com'
+        original_subject = "Report for <<PatientName>>"
+        attachment_file='test.txt'
+        response_mail.reply("Kindky find report attached with the mail",original_subject,sender_email,recipient_mail,attachment_file)        
+
+reply_area = ttk.Frame(input_frame)
+reply_area.pack(side='bottom',fill='y')
+
+label_attachment_file = ttk.Label(reply_area,text = 'Attachment file from AI')
+label_attachment_file.pack(side='left',fill='x')
+
+def select_report_file(tree):
+    print('selecting report file ')
+    filename = filedialog.askopenfilename()
+    label_attachment_file.config(text=filename)
+    pass
+browse_button = ttk.Button(reply_area,text ='Browse',command=lambda: select_report_file(tree))
+browse_button.pack(side='right',fill='x')
+
+reply_button =ttk.Button(reply_area,text='Reply',command=lambda: reply_mail(tree))
+reply_button.pack(side='right',fill='x')
 
 def check_logout(login_button,logout_button):
     login_button.config(state=tk.NORMAL)
@@ -324,7 +363,7 @@ class MultilineCell(tk.Frame):
         self.text = tk.Text(self, wrap="word")
         self.text.insert("1.0", text)
         self.text.pack()
-        
+
 def populate_email(server,tree):
     server.select("INBOX")
     # Get today's date in UTC
@@ -342,6 +381,8 @@ def populate_email(server,tree):
         _, data = server.fetch(uid, "(RFC822)")
         raw_email = data[0][1]
         email_message = email.message_from_bytes(raw_email)
+        print(uid)
+        #print(email_message)
         #print(email_message)
         # Extract relevant information (e.g., headers, body)
         sender = email_message["From"]
@@ -351,7 +392,11 @@ def populate_email(server,tree):
             subject = email_message["Subject"]
             print("From:", sender )
             print("Subject:", subject)
-            
+            email_details = {}
+            email_details['sender'] = email_address
+            email_details['subject'] = subject
+            emails_dict[len(emails_dict)]= email_details 
+                
             attachments = get_attachments(email_message)
             drivelinks = extract_drive_links(email_message)
             print("Attachments:-",attachments)
@@ -364,6 +409,7 @@ def populate_email(server,tree):
             if len(drivelinks) > 0: 
                 drive_file_id = re.search(r"/file/d/(.*?)/", drivelinks[0]).group(1)
             tree.insert("", tk.END, values=(sender, subject,body,zipfilename,"Calculating...",drive_file_id,attachments))
+            
 def update_row(item_id, new_values):
     tree.item(item_id, values=new_values)
                 

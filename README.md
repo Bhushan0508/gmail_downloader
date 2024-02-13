@@ -15,8 +15,16 @@
 7.  Set the downloads folder to the default downloads Folder
 8.  Open the augnito UI. 
     Should i open augnito using selenium
-9.  Reply to the mail.
-10. Open the attachments.
-11. Open the app with app
-12. Prev Day scan options
-13. Status Display in the treeview.
+9.  Reply to the mail. 
+    Rply to mail with with the report file
+    Reply button on UI.
+10. Open the attachments. -- Done
+11. Open the Radiant Viewer on poen button - Done
+12. Prev Day scan options -  
+13. Status Display in the treeview.--Done
+14. Add date time to the Columns
+15. No clearing and updating the mail--only add new entry at the top. will help in replying
+14. New idea
+    Management system for reporting
+        Tasks status
+16. Import the downloaded scan in the horos
